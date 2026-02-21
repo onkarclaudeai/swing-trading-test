@@ -54,7 +54,7 @@ def _load_fo_list_from_cache() -> pd.DataFrame:
     """Load the cached F&O CSV into a DataFrame."""
     # The NSE CSV has a quirky format — first row is a header we skip,
     # and symbol column is named 'SYMBOL'
-    df = pd.read_csv(FO_CACHE_FILE, skiprows=1)
+    df = pd.read_csv(FO_CACHE_FILE)
     df.columns = df.columns.str.strip().str.upper()
     return df
 
