@@ -29,14 +29,16 @@ CHARTINK_HEADERS = {
 
 def _get_csrf_token(session: requests.Session) -> str:
     """
-    Chartink requires a CSRF token for POST requests.
-    We get it by first loading the screener page and reading the cookie.
+    Chartink embeds the CSRF token in the page HTML as a meta tag.
+    We extract it with a regex rather than reading from cookies.
     """
-    session.get("https://chartink.com/screener/", headers=CHARTINK_HEADERS, timeout=10)
-    token = session.cookies.get("_csrf_token", "")
-    if not token:
-        logger.warning("CSRF token not found — Chartink request may fail")
-    return token
+    import re
+    resp = session.get("https://chartink.com/screener/", headers=CHARTINK_HEADERS, timeout=10)
+    match = re.search(r'<meta name="csrf-token" content="([^"]+)"', resp.text)
+    if not match:
+        logger.warning("CSRF token not found in page HTML — Chartink request may fail")
+        return ""
+    return match.group(1)
 
 
 def _run_single_scanner(
@@ -59,7 +61,7 @@ def _run_single_scanner(
         Keys include: 'nsecode', 'close', 'volume', 'per_chg' etc.
     """
     payload = {
-        "_csrf_token": csrf_token,
+        "_token": csrf_token,      # Chartink expects '_token', not '_csrf_token'
         "scan_clause": scan_clause,
     }
     try:
